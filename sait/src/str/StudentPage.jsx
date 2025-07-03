@@ -85,7 +85,9 @@ export default function StudentPage() {
             <button 
               type="submit" 
               className="role-button login-button"
+              onClick={() => navigate('/admin')}
             >
+    
               Войти
             </button>
             

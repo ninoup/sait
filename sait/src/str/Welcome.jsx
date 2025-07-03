@@ -22,11 +22,15 @@ function Button_one_str() {
     <div className="button-group">
       <button 
         className="role-button student-button"
-        onClick={() => navigate('/student')} // Переход на страницу студента
+        onClick={() => navigate('/student')}
       >
         Студент
       </button>
-      <button className="role-button admin-button">
+      
+      <button 
+        className="role-button admin-button"
+        onClick={() => navigate('/')}
+      >
         Администрация
       </button>
     </div>

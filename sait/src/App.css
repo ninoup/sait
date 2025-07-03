@@ -275,3 +275,11 @@
 .password-toggle:focus {
   outline: none;
 }
+
+/* Для звездочки в анкете */
+.required-star {
+  color: red;
+  margin-left: 4px;
+  font-size: 1.2em;
+  vertical-align: super;
+}
