@@ -2,82 +2,120 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../App.css';
 
+const useLanguage = () => {
+  const [language] = useState(() => {
+    return localStorage.getItem('appLanguage') || 'ru';
+  });
+  return language;
+};
+
 export default function StudentPage() {
   const navigate = useNavigate();
   const [login, setLogin] = useState('');
+  const language = useLanguage();
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Новое состояние для отображения пароля
 
-  const handleLoginChange = (e) => {
-    setLogin(e.target.value);
-    setError('');
+  const pageTexts = {
+    ru: {
+      title: 'Вход для студентов',
+      loginLabel: 'Логин',
+      loginPlaceholder: 'Введите имя пользователя',
+      passwordLabel: 'Пароль',
+      passwordPlaceholder: 'Введите пароль',
+      showPassword: 'Показать пароль?',
+      submitButton: 'Войти',
+      homeButton: 'На главную',
+      error: 'Неверные учетные данные'
+    },
+    en: {
+      title: 'Student Login',
+      loginLabel: 'Login',
+      loginPlaceholder: 'Enter username',
+      passwordLabel: 'Password',
+      passwordPlaceholder: 'Enter password',
+      showPassword: 'Show password?',
+      submitButton: 'Log In',
+      homeButton: 'Home',
+      error: 'Invalid credentials'
+    }
   };
 
-  const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
-    setError('');
-  };
+  const t = (key) => pageTexts[language][key] || key;
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword); // Переключаем состояние видимости пароля
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
-    if (!login.trim()) {
-      setError('Введите логин');
-      return;
+    try {
+      const response = await fetch('http://localhost:8000/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: login,
+          password: password
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('userType', data.user_type);
+        localStorage.setItem('fullName', data.full_name);
+        localStorage.setItem('studentId', data.id);
+        navigate('/student_acc');
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || t('error'));
+      }
+    } catch (err) {
+      setError(err.message);
     }
-    
-    if (!password.trim()) {
-      setError('Введите пароль');
-      return;
-    }
-
-    console.log('Отправка данных:', { login, password });
-    // navigate('/dashboard');
   };
 
   return (
     <div className="auth-container">
-      <h1 className="auth-title">Вход для студентов</h1>
+      <h1 className="auth-title">{t('title')}</h1>
       <div className="auth-box">
         {error && <div className="error-message">{error}</div>}
-        
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="login">Логин:</label>
+            <label htmlFor="login">{t('loginLabel')}</label>
             <input
               type="text"
               id="login"
-              placeholder="Введите ваш логин"
+              placeholder={t('loginPlaceholder')}
               value={login}
-              onChange={handleLoginChange}
+              onChange={(e) => setLogin(e.target.value)}
               className="login-input"
+              required
             />
           </div>
           
-          <div className="form-group password-group">
-            <label htmlFor="password">Пароль:</label>
-            <div className="password-input-container">
+          <div className="form-group">
+            <label htmlFor="password">{t('passwordLabel')}</label>
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              placeholder={t('passwordPlaceholder')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="password-input"
+              required
+            />
+            <div className="show-password-checkbox">
               <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                placeholder="Введите ваш пароль"
-                value={password}
-                onChange={handlePasswordChange}
-                className="password-input"
+                type="checkbox"
+                id="showPassword"
+                checked={showPassword}
+                onChange={() => setShowPassword(!showPassword)}
               />
-              <button
-                type="button"
-                className="password-toggle"
-                onClick={togglePasswordVisibility}
-                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
-              >
-                {showPassword ? '🔒' : '👁️'}
-              </button>
+              <label htmlFor="showPassword" style={{color: 'gray'}}>
+                {t('showPassword')}
+              </label>
             </div>
           </div>
           
@@ -85,10 +123,8 @@ export default function StudentPage() {
             <button 
               type="submit" 
               className="role-button login-button"
-              onClick={() => navigate('/admin')}
             >
-    
-              Войти
+              {t('submitButton')}
             </button>
             
             <button 
@@ -96,7 +132,7 @@ export default function StudentPage() {
               className="role-button secondary-button"
               onClick={() => navigate('/')}
             >
-              На главную
+              {t('homeButton')}
             </button>
           </div>
         </form>
